@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Box Simulator - box-01</title>
+<style>
+  body { font-family: sans-serif; background:#111; color:#eee; padding:20px; }
+  video { width: 100%; max-width: 720px; background:#000; display:block; margin-bottom:10px; }
+  #log { background:#000; color:#0f0; font-family: monospace; font-size:13px; padding:10px; height:220px; overflow-y:auto; white-space:pre-wrap; }
+  #status { font-size: 20px; margin-bottom:10px; padding:10px; background:#222; border-radius:6px; }
+  label { display:block; margin-bottom:10px; }
+  input { padding:4px; }
+</style>
+</head>
+<body>
+  <h2>Box Simulator</h2>
+  <label>Device ID: <input id="deviceId" value="box-01"></label>
+  <label>Server: <input id="serverBase" value="localhost:8080" size="30"></label>
+  <button onclick="connect()">Ket noi</button>
+
+  <div id="status">Chua ket noi...</div>
+  <video id="player" controls muted></video>
+  <div id="log"></div>
+
+<script>
+const video = document.getElementById('player');
+const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
+
+let ws = null;
+let playlist = [];
+let currentIndex = 0;
+let loopEnabled = true;
+let endTime = null;
+let playing = false;
+let serverBase = '';
+
+function log(msg) {
+  const time = new Date().toLocaleTimeString();
+  logEl.textContent += `[${time}] ${msg}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function playCurrent() {
+  if (!playing || playlist.length === 0) return;
+  const item = playlist[currentIndex];
+  video.src = `http://${serverBase}${item.streamUrl}`;
+  video.play().catch(e => log("Loi khi play: " + e));
+  statusEl.textContent = `Dang chieu: ${item.title} (thu tu ${item.playOrder}, video ${currentIndex + 1}/${playlist.length})`;
+  log(`-> Chuyen sang video: "${item.title}" (playOrder=${item.playOrder})`);
+}
+
+video.addEventListener('ended', () => {
+  if (!playing) return;
+
+  if (endTime && new Date() >= new Date(endTime)) {
+    stopPlayback("Client tu phat hien da qua endTime");
+    return;
+  }
+
+  currentIndex++;
+  if (currentIndex >= playlist.length) {
+    if (loopEnabled) {
+      currentIndex = 0;
+      log("Da het playlist -> lap lai tu dau (loop_enabled = true)");
+    } else {
+      stopPlayback("Het playlist va loop_enabled = false");
+      return;
+    }
+  }
+  playCurrent();
+});
+
+function stopPlayback(reason) {
+  playing = false;
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+  statusEl.textContent = `Da dung chieu. Ly do: ${reason}`;
+  log(`=== STOP: ${reason} ===`);
+}
+
+function connect() {
+  const deviceId = document.getElementById('deviceId').value.trim();
+  serverBase = document.getElementById('serverBase').value.trim();
+  const wsUrl = `ws://${serverBase}/ws/box?deviceId=${encodeURIComponent(deviceId)}`;
+
+  if (ws) ws.close();
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    statusEl.textContent = `Da ket noi WebSocket voi deviceId="${deviceId}", cho lenh PLAY...`;
+    log(`WebSocket connected toi ${wsUrl}`);
+  };
+
+  ws.onclose = () => {
+    statusEl.textContent = "Mat ket noi WebSocket";
+    log("WebSocket closed");
+  };
+
+  ws.onerror = (e) => {
+    log("WebSocket error (xem console F12 de biet chi tiet)");
+  };
+
+  ws.onmessage = (event) => {
+    log("Nhan lenh tu server: " + event.data);
+    const cmd = JSON.parse(event.data);
+
+    if (cmd.type === "PLAY") {
+      playlist = [...cmd.playlist].sort((a, b) => a.playOrder - b.playOrder);
+      loopEnabled = cmd.loop;
+      endTime = cmd.endTime;
+      currentIndex = 0;
+      playing = true;
+      playCurrent();
+    } else if (cmd.type === "STOP") {
+      stopPlayback(cmd.reason || "STOP tu server");
+    }
+  };
+}
+</script>
+</body>
+</html>
