@@ -1,4 +1,4 @@
-package vn.npc.ads_schedule.dto;
+package vn.npc.ads_schedule.dto.response;
 
 import java.time.LocalDateTime;
 

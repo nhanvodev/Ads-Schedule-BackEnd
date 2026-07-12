@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
-import vn.npc.ads_schedule.dto.VideoResponse;
+import vn.npc.ads_schedule.dto.response.VideoResponse;
 import vn.npc.ads_schedule.entity.Video;
 import vn.npc.ads_schedule.service.VideoService;
 
