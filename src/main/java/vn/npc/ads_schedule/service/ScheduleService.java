@@ -77,4 +77,22 @@ public class ScheduleService {
     public List<Schedule> getAll() {
         return scheduleRepository.findAll();
     }
+
+    @Transactional
+    public Schedule stop(Long id) {
+        Schedule schedule = getById(id);
+        if (schedule.getStatus() == ScheduleStatus.FINISHED || schedule.getStatus() == ScheduleStatus.STOPPED) {
+            throw new IllegalArgumentException("Lich da ket thuc hoac da bi tat truoc do, khong the tat lai");
+        }
+        schedule.setStatus(ScheduleStatus.STOPPED);
+        // TODO Buoc 5: ban lenh STOP qua WebSocket ngay lap tuc cho schedule nay
+        return scheduleRepository.save(schedule);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Schedule schedule = getById(id);
+        scheduleRepository.delete(schedule);
+    }
+
 }

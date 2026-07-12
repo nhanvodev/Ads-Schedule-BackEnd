@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import vn.npc.ads_schedule.entity.Schedule;
+import vn.npc.ads_schedule.entity.ScheduleStatus;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     @Query("""
@@ -22,4 +23,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
             @Param("excludeId") Long excludeId);
+
+    List<Schedule> findByStatusAndStartTimeLessThanEqualAndEndTimeAfter(
+            ScheduleStatus status, LocalDateTime startTime, LocalDateTime endTime);
+
+    List<Schedule> findByStatusAndEndTimeLessThanEqual(
+            ScheduleStatus status, LocalDateTime endTime);
 }
