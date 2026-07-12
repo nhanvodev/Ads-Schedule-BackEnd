@@ -1,4 +1,4 @@
-# Ad Scheduler Backend
+# Ads Schedule Backend
 
 Backend quản lý lịch chiếu quảng cáo trên màn hình Android Box.
 
