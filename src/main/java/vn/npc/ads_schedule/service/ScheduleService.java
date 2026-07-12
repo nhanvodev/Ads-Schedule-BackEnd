@@ -16,6 +16,7 @@ import vn.npc.ads_schedule.exception.ResourceNotFoundException;
 import vn.npc.ads_schedule.exception.ScheduleOverlapException;
 import vn.npc.ads_schedule.repository.ScheduleRepository;
 import vn.npc.ads_schedule.repository.VideoRepository;
+import vn.npc.ads_schedule.websocket.WebSocketCommandService;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
     private final VideoRepository videoRepository;
+    private final WebSocketCommandService webSocketCommandService;
 
     @Transactional
     public Schedule create(CreateScheduleRequest request) {
@@ -85,7 +87,7 @@ public class ScheduleService {
             throw new IllegalArgumentException("Lich da ket thuc hoac da bi tat truoc do, khong the tat lai");
         }
         schedule.setStatus(ScheduleStatus.STOPPED);
-        // TODO Buoc 5: ban lenh STOP qua WebSocket ngay lap tuc cho schedule nay
+        webSocketCommandService.sendStop(schedule, "STOPPED_BY_USER");
         return scheduleRepository.save(schedule);
     }
 

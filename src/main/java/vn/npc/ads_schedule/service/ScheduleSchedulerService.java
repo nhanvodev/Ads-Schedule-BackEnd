@@ -12,12 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import vn.npc.ads_schedule.entity.Schedule;
 import vn.npc.ads_schedule.entity.ScheduleStatus;
 import vn.npc.ads_schedule.repository.ScheduleRepository;
+import vn.npc.ads_schedule.websocket.WebSocketCommandService;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScheduleSchedulerService {
     private final ScheduleRepository scheduleRepository;
+    private final WebSocketCommandService webSocketCommandService;
 
     @Scheduled(fixedRate = 10000)
     @Transactional
@@ -29,7 +31,7 @@ public class ScheduleSchedulerService {
         toStart.forEach(schedule -> {
             schedule.setStatus(ScheduleStatus.PLAYING);
             log.info("Schedule {} (device={}) chuyen PENDING -> PLAYING", schedule.getId(), schedule.getDeviceId());
-            // TODO Buoc 5: ban lenh PLAY qua WebSocket cho schedule nay
+            webSocketCommandService.sendPlay(schedule);
         });
 
         List<Schedule> missed = scheduleRepository.findByStatusAndEndTimeLessThanEqual(
@@ -38,6 +40,7 @@ public class ScheduleSchedulerService {
             schedule.setStatus(ScheduleStatus.FINISHED);
             log.warn("Schedule {} (device={}) da qua gio ma chua chay, bo qua va chuyen thang sang FINISHED",
                     schedule.getId(), schedule.getDeviceId());
+
         });
 
         List<Schedule> toFinish = scheduleRepository.findByStatusAndEndTimeLessThanEqual(
@@ -45,7 +48,7 @@ public class ScheduleSchedulerService {
         toFinish.forEach(schedule -> {
             schedule.setStatus(ScheduleStatus.FINISHED);
             log.info("Schedule {} (device={}) chuyen PLAYING -> FINISHED", schedule.getId(), schedule.getDeviceId());
-            // TODO Buoc 5: ban lenh STOP qua WebSocket cho schedule nay
+            webSocketCommandService.sendStop(schedule, "END_TIME_REACHED");
         });
 
         scheduleRepository.saveAll(toStart);

@@ -1,6 +1,7 @@
 HELP.md
 target/
-video-storage/
+video-storage/*
+!video-storage/.gitkeep
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
